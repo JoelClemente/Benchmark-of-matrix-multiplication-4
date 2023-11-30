@@ -9,13 +9,14 @@ import software.ulpgc.bigdata.algebra.matrices.longint.operators.matrixparallelm
 import software.ulpgc.bigdata.algebra.matrices.longint.reader.MatrixFileReader;
 
 import java.io.IOException;
+import java.util.concurrent.Semaphore;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 public class MatrixParallelMultiplicationTest {
 
     @Test
-    public void testMatrixParallelMultiplication() throws IOException {
+    public void testMatrixParallelMultiplier() throws InterruptedException, IOException {
         String fileNameA = "A.mtx";
         String fileNameB = "B.mtx";
 
@@ -28,15 +29,25 @@ public class MatrixParallelMultiplicationTest {
         double[][] doubleArrayA = MatrixFileReader.convertToDoubleArray(A);
         double[][] doubleArrayB = MatrixFileReader.convertToDoubleArray(B);
 
-        Matrix expectedResult = DenseMatrixMultiplication.multiply(denseA, denseB);
+        double[][] resultArray = new double[denseA.getNumRows()][denseB.getNumCols()];
 
-        double[][] resultArray = new double[A.getNumRows()][B.getNumCols()];
+        int tileSize = 2;
 
-        MatrixParallelMultiplier.multiplyInParallel(doubleArrayA, doubleArrayB, resultArray);
+        System.out.println("Tiles of MatrixA:");
+        printTiles(doubleArrayA, tileSize);
+        System.out.println("Tiles of MatrixB:");
+        printTiles(doubleArrayB, tileSize);
+
+        Semaphore semaphore = new Semaphore(1);
+        MatrixParallelMultiplier parallelMultiplier = new MatrixParallelMultiplier(doubleArrayA, doubleArrayB, resultArray, tileSize, semaphore);
+        parallelMultiplier.multiplyInParallel();
+
+        Matrix sequentialResult = DenseMatrixMultiplication.multiply(denseA, denseB);
 
         System.out.println("Result Matrix C:");
         printMatrix(resultArray);
-        assertArrayEquals(expectedResult.toArray(), resultArray);
+
+        assertArrayEquals(sequentialResult.toArray(), resultArray);
     }
 
     private void printMatrix(double[][] matrix) {
@@ -48,6 +59,21 @@ public class MatrixParallelMultiplicationTest {
                 System.out.print(matrix[i][j] + " ");
             }
             System.out.println();
+        }
+    }
+
+    private void printTiles(double[][] matrix, int tileSize) {
+        for (int i = 0; i < matrix.length; i += tileSize) {
+            for (int j = 0; j < matrix[0].length; j += tileSize) {
+                System.out.println("Tile at (" + i + ", " + j + "):");
+                for (int row = i; row < i + tileSize && row < matrix.length; row++) {
+                    for (int col = j; col < j + tileSize && col < matrix[0].length; col++) {
+                        System.out.print(matrix[row][col] + " ");
+                    }
+                    System.out.println();
+                }
+                System.out.println();
+            }
         }
     }
 }

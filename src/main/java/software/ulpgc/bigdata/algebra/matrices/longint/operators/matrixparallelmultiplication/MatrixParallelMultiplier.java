@@ -5,54 +5,65 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-public class MatrixParallelMultiplier implements Runnable {
+public class MatrixParallelMultiplier {
+
     private double[][] A, B, C;
-    private int row;
+    private int tileSize;
+    private int numRowsA, numColsA, numColsB;
     private Semaphore semaphore;
 
-    public MatrixParallelMultiplier(double[][] A, double[][] B, double[][] C, int row, Semaphore semaphore) {
+    public MatrixParallelMultiplier(double[][] A, double[][] B, double[][] C, int tileSize, Semaphore semaphore) {
         this.A = A;
         this.B = B;
         this.C = C;
-        this.row = row;
+        this.tileSize = tileSize;
+        this.numRowsA = A.length;
+        this.numColsA = A[0].length;
+        this.numColsB = B[0].length;
         this.semaphore = semaphore;
     }
 
-    @Override
-    public void run() {
-        try {
-            semaphore.acquire();
-            for (int i = 0; i < B[0].length; i++) {
-                double sum = 0;
-                for (int j = 0; j < A[0].length; j++) {
-                    sum += A[row][j] * B[j][i];
-                }
-                C[row][i] = sum;
+    public void multiplyInParallel() throws InterruptedException {
+        ExecutorService executor = Executors.newFixedThreadPool(numRowsA);
+
+        for (int i = 0; i < numRowsA; i += tileSize) {
+            for (int j = 0; j < numColsB; j += tileSize) {
+                executor.submit(new TileMultiplier(i, j));
             }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } finally {
-            semaphore.release();
         }
+
+        executor.shutdown();
+        executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
     }
 
-    public static void multiplyInParallel(double[][] A, double[][] B, double[][] C) {
-        Semaphore semaphore = new Semaphore(1);
-        ExecutorService executorService = Executors.newFixedThreadPool(A.length);
+    private class TileMultiplier implements Runnable {
+        private int startRow, startCol;
 
-        for (int i = 0; i < A.length; i++) {
-            executorService.submit(new MatrixParallelMultiplier(A, B, C, i, semaphore));
+        public TileMultiplier(int startRow, int startCol) {
+            this.startRow = startRow;
+            this.startCol = startCol;
         }
 
-        executorService.shutdown();
+        @Override
+        public void run() {
+            try {
+                semaphore.acquire();
 
-        try {
-            if (!executorService.awaitTermination(10, TimeUnit.SECONDS)) {
-                executorService.shutdownNow();
+                for (int i = startRow; i < Math.min(startRow + tileSize, numRowsA); i++) {
+                    for (int j = startCol; j < Math.min(startCol + tileSize, numColsB); j++) {
+                        double sum = 0;
+                        for (int k = 0; k < numColsA; k++) {
+                            sum += A[i][k] * B[k][j];
+                        }
+                        C[i][j] = sum;
+                    }
+                }
+
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                semaphore.release();
             }
-        } catch (InterruptedException e) {
-            executorService.shutdownNow();
-            Thread.currentThread().interrupt();
         }
     }
 }
