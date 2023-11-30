@@ -24,7 +24,7 @@ public class MatrixParallelMultiplier {
     }
 
     public void multiplyInParallel() throws InterruptedException {
-        ExecutorService executor = Executors.newFixedThreadPool(numRowsA);
+        ExecutorService executor = Executors.newFixedThreadPool(numRowsA*numColsB);
 
         for (int i = 0; i < numRowsA; i += tileSize) {
             for (int j = 0; j < numColsB; j += tileSize) {
@@ -33,7 +33,7 @@ public class MatrixParallelMultiplier {
         }
 
         executor.shutdown();
-        executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        executor.awaitTermination(1000, TimeUnit.SECONDS);
     }
 
     private class TileMultiplier implements Runnable {
