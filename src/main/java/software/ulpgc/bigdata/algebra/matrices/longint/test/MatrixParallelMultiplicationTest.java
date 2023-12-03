@@ -5,7 +5,7 @@ import software.ulpgc.bigdata.algebra.matrices.longint.Matrix;
 import software.ulpgc.bigdata.algebra.matrices.longint.matrix.CoordinateMatrix;
 import software.ulpgc.bigdata.algebra.matrices.longint.matrix.DenseMatrix;
 import software.ulpgc.bigdata.algebra.matrices.longint.operators.matrixmultiplication.DenseMatrixMultiplication;
-import software.ulpgc.bigdata.algebra.matrices.longint.operators.matrixparallelmultiplication.MatrixParallelMultiplier;
+import software.ulpgc.bigdata.algebra.matrices.longint.operators.matrixmultiplication.MatrixParallelMultiplier;
 import software.ulpgc.bigdata.algebra.matrices.longint.reader.MatrixFileReader;
 
 import java.io.IOException;

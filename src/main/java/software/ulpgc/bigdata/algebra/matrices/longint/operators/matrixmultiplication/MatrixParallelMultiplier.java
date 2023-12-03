@@ -1,4 +1,4 @@
-package software.ulpgc.bigdata.algebra.matrices.longint.operators.matrixparallelmultiplication;
+package software.ulpgc.bigdata.algebra.matrices.longint.operators.matrixmultiplication;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
